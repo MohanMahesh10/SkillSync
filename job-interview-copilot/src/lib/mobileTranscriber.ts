@@ -9,6 +9,22 @@ export function createChunkedTranscriber(apiKey: string, callbacks: Callbacks) {
   let mediaRecorder: MediaRecorder | null = null;
   let running = false;
   let timer: number | null = null;
+  let mimeType = 'audio/webm';
+
+  function pickMimeType(): string {
+    const candidates = [
+      'audio/webm;codecs=opus',
+      'audio/webm',
+      'audio/mp4',
+      'audio/ogg;codecs=opus',
+    ];
+    for (const c of candidates) {
+      try {
+        if ((window as any).MediaRecorder && (MediaRecorder as any).isTypeSupported?.(c)) return c;
+      } catch {}
+    }
+    return 'audio/webm';
+  }
 
   async function transcribe(blob: Blob): Promise<string> {
     // Reuse transcribe logic inline to avoid extra import weight
@@ -43,8 +59,15 @@ export function createChunkedTranscriber(apiKey: string, callbacks: Callbacks) {
   return {
     start: async () => {
       try {
-        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        mediaRecorder = new MediaRecorder(stream, { mimeType: 'audio/webm' });
+        const stream = await navigator.mediaDevices.getUserMedia({
+          audio: {
+            echoCancellation: true,
+            noiseSuppression: true,
+            channelCount: 1,
+          } as MediaTrackConstraints,
+        });
+        mimeType = pickMimeType();
+        mediaRecorder = new MediaRecorder(stream, { mimeType });
         mediaRecorder.ondataavailable = async (e) => {
           if (!e.data || e.data.size < 1000) return;
           try {
@@ -54,7 +77,7 @@ export function createChunkedTranscriber(apiKey: string, callbacks: Callbacks) {
             callbacks.onError?.(err?.message || 'Transcription failed');
           }
         };
-        mediaRecorder.start(2000); // 2s chunks
+        mediaRecorder.start(1500); // 1.5s chunks for snappier updates on Android
         running = true;
       } catch (e: any) {
         callbacks.onError?.(e?.message || 'Mic permission error');
