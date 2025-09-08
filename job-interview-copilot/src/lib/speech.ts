@@ -23,7 +23,12 @@ function mapErrorMessage(e: any): string {
   }
 }
 
-export function createSpeechRecognizer(callbacks: SpeechCallbacks) {
+type SpeechOptions = {
+  autoRestart?: boolean;
+};
+
+export function createSpeechRecognizer(callbacks: SpeechCallbacks, options: SpeechOptions = {}) {
+  const autoRestart = options.autoRestart ?? false;
   const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
   if (!SpeechRecognition) {
     throw new Error('Web Speech API not supported in this browser. Use Chrome/Edge.');
@@ -34,6 +39,9 @@ export function createSpeechRecognizer(callbacks: SpeechCallbacks) {
   recognition.lang = 'en-US';
   // Prefer speed
   (recognition as any).maxAlternatives = 1;
+  // Android Chrome stability tweaks
+  try { (recognition as any).serviceURI = ''; } catch {}
+  try { (recognition as any).grammars = null; } catch {}
   let shouldBeRunning = false;
   let retryCount = 0;
   // backoff grows up to ~3s max
@@ -41,7 +49,7 @@ export function createSpeechRecognizer(callbacks: SpeechCallbacks) {
   recognition.onstart = () => callbacks.onStart?.();
   recognition.onend = () => {
     callbacks.onStop?.();
-    if (shouldBeRunning) {
+    if (shouldBeRunning && autoRestart) {
       // Chrome sometimes ends recognition silently; try to resume
       retryCount++;
       const delay = Math.min(600 + retryCount * 300, 3000);
@@ -59,7 +67,8 @@ export function createSpeechRecognizer(callbacks: SpeechCallbacks) {
     }
     if (code === 'network' || code === 'aborted' || code === 'no-speech') {
       callbacks.onError?.(mapErrorMessage(e));
-      try { recognition.stop(); } catch {}
+      // On Android, calling stop() can cancel restarts; prefer end + restart
+      try { recognition.abort?.(); } catch {}
       return; // onend will trigger restart if shouldBeRunning
     }
     callbacks.onError?.(mapErrorMessage(e));

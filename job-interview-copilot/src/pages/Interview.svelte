@@ -70,7 +70,7 @@
             }
           }
         },
-        });
+        }, { autoRestart: false });
         recognizer.start();
       } else {
         // iOS fallback: chunked transcription loop
