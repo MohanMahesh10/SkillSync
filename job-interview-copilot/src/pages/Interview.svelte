@@ -24,11 +24,7 @@
   let debounceHandle: number | null = null;
   let lastProcessedSignature = '';
   let resumeSummary = '';
-  // UI/UX controls
-  type DisplayMode = 'hidden' | 'hints' | 'full';
-  let displayMode: DisplayMode = 'hints';
-  let discreet = true; // blur answers unless revealed
-  let revealed = false;
+  // Minimal UI: auto-generate while listening; only Start/Stop visible
 
   let recognizer: ReturnType<typeof createSpeechRecognizer> | null = null;
   let fallbackRecording = false;
@@ -203,21 +199,12 @@ ${question}
 Output only the final answer in the appropriate format.`;
   }
 
-  $: aiHints = computeHints(aiAnswer);
-  function computeHints(answer: string): string[] {
-    if (!answer) return [];
-    const lines = answer
-      .split(/\n+/)
-      .map((l) => l.trim())
-      .filter(Boolean);
-    if (lines.length <= 3) return lines;
-    return lines.slice(0, 3);
-  }
+  // No hints/reveal controls in minimal UI
 
   
 </script>
 
-<!-- Mobile clean view -->
+<!-- Mobile minimal view -->
 <div class="md:hidden px-4 pt-4 pb-28">
   <div class="flex items-center justify-between mb-3">
     <button class="w-9 h-9 rounded-full bg-orange-100 text-orange-700 flex items-center justify-center text-lg" on:click={listening ? stop : start} aria-label={listening ? 'Stop' : 'Start'}>
@@ -227,30 +214,16 @@ Output only the final answer in the appropriate format.`;
   </div>
 
   <div class="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 min-h-[320px] p-4">
-    {#if !aiAnswer && (!aiHints || !aiHints.length)}
+    {#if !aiAnswer}
       <p class="text-gray-600 dark:text-gray-300 leading-relaxed">
-        After the interviewer asks a question, tap the button below to receive your personalized answer hint.
+        After the interviewer asks a question, you'll see a precise answer here.
       </p>
     {:else}
-      {#if displayMode === 'hints'}
-        <ul class="list-disc pl-6 space-y-2 text-[15px]">
-          {#each aiHints as h}
-            <li>{h}</li>
-          {/each}
-        </ul>
-      {:else}
-        <div class="whitespace-pre-wrap text-[15px] leading-relaxed">{aiAnswer}</div>
-      {/if}
+      <div class="whitespace-pre-wrap text-[15px] leading-relaxed">{aiAnswer}</div>
     {/if}
   </div>
 
   <div class="mt-3 text-sm text-gray-500">{listening ? 'Transcribing..' : ''}</div>
-
-  <div class="fixed inset-x-0 bottom-3 px-4">
-    <button class="w-full py-4 rounded-full bg-green-600 text-white text-lg shadow-lg disabled:opacity-50" on:click={askGemini} disabled={!transcript.trim()}>
-      Generate Answer Hint
-    </button>
-  </div>
 </div>
 
 <!-- Desktop/tablet view -->
@@ -264,44 +237,13 @@ Output only the final answer in the appropriate format.`;
       </div>
     </div>
     <div class="min-h-48 p-3 rounded bg-gray-50 dark:bg-gray-900 whitespace-pre-wrap text-base leading-relaxed">{transcript || 'Waiting for speech...'}</div>
-    <div class="mt-3 flex items-center gap-4 text-sm">
-      <label class="inline-flex items-center gap-2"><input type="checkbox" bind:checked={autoGenerate} /> Auto-generate answers</label>
-      <label class="inline-flex items-center gap-2"><input type="checkbox" bind:checked={discreet} /> Discreet mode</label>
-      <div class="ml-auto flex items-center gap-2">
-        <span class="text-xs text-gray-500">Answer view:</span>
-        <select bind:value={displayMode} class="bg-transparent border border-gray-300 dark:border-gray-700 rounded px-2 py-1 text-sm">
-          <option value="hidden">Hidden</option>
-          <option value="hints">Hints</option>
-          <option value="full">Full</option>
-        </select>
-      </div>
-    </div>
   </div>
 
   <div class="bg-white dark:bg-gray-800 rounded-xl shadow p-4">
     <div class="flex items-center justify-between mb-3">
       <h2 class="font-semibold">AI Suggested Answer</h2>
-      <div class="flex items-center gap-2">
-        <button class="px-3 py-1 rounded bg-accent-sky text-white disabled:opacity-50" on:click={askGemini} disabled={!transcript.trim()}>Generate</button>
-        {#if displayMode !== 'hidden'}
-          <button class="px-2 py-1 rounded bg-gray-200 dark:bg-gray-700 text-xs" on:click={() => (revealed = !revealed)}>{revealed ? 'Hide' : 'Reveal'}</button>
-        {/if}
-      </div>
     </div>
-    {#if displayMode === 'hidden'}
-      <div class="text-sm text-gray-500">Answer hidden</div>
-    {:else if displayMode === 'hints'}
-      <ul class="min-h-24 p-3 rounded bg-gray-50 dark:bg-gray-900 text-sm list-disc pl-6">
-        {#each aiHints as h}
-          <li class={discreet && !revealed ? 'blur-[5px] hover:blur-none transition' : ''}>{h}</li>
-        {/each}
-        {#if !aiHints.length}
-          <li class="text-gray-500">No hints yet</li>
-        {/if}
-      </ul>
-    {:else}
-      <div class={`min-h-48 p-3 rounded bg-gray-50 dark:bg-gray-900 whitespace-pre-wrap ${discreet && !revealed ? 'blur-[5px] hover:blur-none transition' : ''}`}>{aiAnswer}</div>
-    {/if}
+    <div class="min-h-48 p-3 rounded bg-gray-50 dark:bg-gray-900 whitespace-pre-wrap">{aiAnswer || 'Answer will appear here.'}</div>
     <div class="mt-3">
       <ConfidenceBar {confidence} />
     </div>
