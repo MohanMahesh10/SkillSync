@@ -78,7 +78,7 @@
         chunked = createChunkedTranscriber(apiKey, {
           onChunk: (t) => {
             transcript = t; // show last chunk
-            scheduleProcess(300);
+            scheduleProcess(200);
           },
           onError: (m) => (error = m),
         });

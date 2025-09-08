@@ -77,7 +77,7 @@ export function createChunkedTranscriber(apiKey: string, callbacks: Callbacks) {
             callbacks.onError?.(err?.message || 'Transcription failed');
           }
         };
-        mediaRecorder.start(1500); // 1.5s chunks for snappier updates on Android
+        mediaRecorder.start(1000); // 1s chunks for faster perceived latency
         running = true;
       } catch (e: any) {
         callbacks.onError?.(e?.message || 'Mic permission error');
