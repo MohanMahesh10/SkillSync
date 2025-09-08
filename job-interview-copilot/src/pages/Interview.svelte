@@ -5,6 +5,7 @@
   import { generateText } from '../lib/gemini';
   import { transcribeWithGemini } from '../lib/transcribe';
   import { createChunkedTranscriber } from '../lib/mobileTranscriber';
+  import { historyStore } from '../stores/history';
   import ConfidenceBar from '../components/ConfidenceBar.svelte';
 
   let apiKey = '';
@@ -108,6 +109,7 @@
       const { text, confidence: conf } = await generateText({ apiKey, prompt, temperature: 0.3 });
       aiAnswer = text || '(No answer)';
       confidence = conf;
+      historyStore.add(transcript.trim(), aiAnswer);
     } catch (e: any) {
       error = e?.message || 'Failed to generate answer.';
       aiAnswer = '';
@@ -311,6 +313,25 @@ Output only the final answer in the appropriate format.`;
     {:else}
       <div class="text-sm text-gray-500">No resume uploaded. Go to Home to add one.</div>
     {/if}
+  </div>
+
+  <div class="bg-white dark:bg-gray-800 rounded-xl shadow p-4 md:col-span-3">
+    <div class="flex items-center justify-between mb-3">
+      <h2 class="font-semibold">Answer History (last 3)</h2>
+      <button class="px-2 py-1 rounded bg-gray-200 dark:bg-gray-700 text-xs" on:click={() => historyStore.clear()}>Clear</button>
+    </div>
+    <div class="space-y-3">
+      {#each $historyStore as item (item.id)}
+        <div class="rounded border border-gray-200 dark:border-gray-700 p-3">
+          <div class="text-xs text-gray-500">{new Date(item.ts).toLocaleTimeString()}</div>
+          <div class="mt-1 text-sm"><span class="font-semibold">Q:</span> {item.question}</div>
+          <div class="mt-1 whitespace-pre-wrap"><span class="font-semibold">A:</span> {item.answer}</div>
+        </div>
+      {/each}
+      {#if !$historyStore.length}
+        <div class="text-sm text-gray-500">No history yet.</div>
+      {/if}
+    </div>
   </div>
 
   {#if error}
