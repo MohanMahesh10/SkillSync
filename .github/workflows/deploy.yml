@@ -40,6 +40,7 @@ jobs:
 
       - name: Build
         env:
+          GITHUB_REPOSITORY: ${{ github.repository }}
           VITE_BASE_PATH: /${{ github.event.repository.name }}/
         run: npm run build
         working-directory: ${{ env.WORKDIR }}
