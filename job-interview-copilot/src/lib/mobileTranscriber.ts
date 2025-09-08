@@ -44,7 +44,7 @@ export function createChunkedTranscriber(apiKey: string, callbacks: Callbacks) {
           role: 'user',
           parts: [
             { text: 'Transcribe this audio chunk. Return only text.' },
-            { inlineData: { mimeType: 'audio/webm', data } },
+            { inlineData: { mimeType, data } },
           ],
         },
       ],
