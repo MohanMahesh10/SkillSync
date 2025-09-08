@@ -201,16 +201,55 @@ Output only the final answer in the appropriate format.`;
 
   // No hints/reveal controls in minimal UI
 
+  // Structured answer rendering (bulleted/paragraph blocks)
+  function escapeHtml(s: string): string {
+    return s
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
+  }
+
+  function formatAnswerToHtml(answer: string): string {
+    const lines = answer.split(/\n+/).map((l) => l.trim()).filter(Boolean);
+    let html = '';
+    let inList = false;
+    const listItemRe = /^(?:[-•]|\d+[\.)])/;
+    for (const line of lines) {
+      const isItem = listItemRe.test(line);
+      if (isItem && !inList) {
+        inList = true;
+        html += '<ul class="structured list-outside pl-6 space-y-2">';
+      }
+      if (!isItem && inList) {
+        inList = false;
+        html += '</ul>';
+      }
+      if (isItem) {
+        const content = escapeHtml(line.replace(listItemRe, '').trim());
+        html += `<li class=\"structured-item\">${content}</li>`;
+      } else {
+        // Bold markdown **text**
+        const escaped = escapeHtml(line).replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+        html += `<p class=\"mb-3\">${escaped}</p>`;
+      }
+    }
+    if (inList) html += '</ul>';
+    return html || '<p class="text-gray-500">Answer will appear here.</p>';
+  }
+
+  $: formattedAnswerHtml = formatAnswerToHtml(aiAnswer);
+
   
 </script>
 
 <!-- Mobile minimal view -->
 <div class="md:hidden px-4 pt-4 pb-28">
   <div class="flex items-center justify-between mb-3">
-    <button class="w-9 h-9 rounded-full bg-orange-100 text-orange-700 flex items-center justify-center text-lg" on:click={listening ? stop : start} aria-label={listening ? 'Stop' : 'Start'}>
-      {#if listening}■{:else}⏻{/if}
+    <button class={`flex-1 h-12 rounded-full text-white text-base font-medium shadow transition ${listening ? 'bg-red-600' : 'bg-green-600'}`} on:click={listening ? stop : start}>
+      {listening ? 'Stop' : 'Start'}
     </button>
-    <div class="text-sm text-green-600">{listening ? 'Listening' : 'Ready'}</div>
+    <div class="ml-3 text-sm {listening ? 'text-green-600' : 'text-gray-500'}">{listening ? 'Listening' : 'Ready'}</div>
   </div>
 
   <div class="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 min-h-[320px] p-4">
@@ -219,7 +258,9 @@ Output only the final answer in the appropriate format.`;
         After the interviewer asks a question, you'll see a precise answer here.
       </p>
     {:else}
-      <div class="whitespace-pre-wrap text-[15px] leading-relaxed">{aiAnswer}</div>
+      <div class="text-[15px] leading-relaxed prose prose-sm max-w-none dark:prose-invert">
+        {@html formattedAnswerHtml}
+      </div>
     {/if}
   </div>
 
@@ -243,7 +284,11 @@ Output only the final answer in the appropriate format.`;
     <div class="flex items-center justify-between mb-3">
       <h2 class="font-semibold">AI Suggested Answer</h2>
     </div>
-    <div class="min-h-48 p-3 rounded bg-gray-50 dark:bg-gray-900 whitespace-pre-wrap">{aiAnswer || 'Answer will appear here.'}</div>
+    <div class="min-h-48 p-3 rounded bg-gray-50 dark:bg-gray-900">
+      <div class="prose prose-sm max-w-none dark:prose-invert">
+        {@html formattedAnswerHtml}
+      </div>
+    </div>
     <div class="mt-3">
       <ConfidenceBar {confidence} />
     </div>
