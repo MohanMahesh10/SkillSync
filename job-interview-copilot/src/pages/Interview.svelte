@@ -217,7 +217,44 @@ Output only the final answer in the appropriate format.`;
   
 </script>
 
-<section class="grid md:grid-cols-3 gap-6">
+<!-- Mobile clean view -->
+<div class="md:hidden px-4 pt-4 pb-28">
+  <div class="flex items-center justify-between mb-3">
+    <button class="w-9 h-9 rounded-full bg-orange-100 text-orange-700 flex items-center justify-center text-lg" on:click={listening ? stop : start} aria-label={listening ? 'Stop' : 'Start'}>
+      {#if listening}■{:else}⏻{/if}
+    </button>
+    <div class="text-sm text-green-600">{listening ? 'Listening' : 'Ready'}</div>
+  </div>
+
+  <div class="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 min-h-[320px] p-4">
+    {#if !aiAnswer && (!aiHints || !aiHints.length)}
+      <p class="text-gray-600 dark:text-gray-300 leading-relaxed">
+        After the interviewer asks a question, tap the button below to receive your personalized answer hint.
+      </p>
+    {:else}
+      {#if displayMode === 'hints'}
+        <ul class="list-disc pl-6 space-y-2 text-[15px]">
+          {#each aiHints as h}
+            <li>{h}</li>
+          {/each}
+        </ul>
+      {:else}
+        <div class="whitespace-pre-wrap text-[15px] leading-relaxed">{aiAnswer}</div>
+      {/if}
+    {/if}
+  </div>
+
+  <div class="mt-3 text-sm text-gray-500">{listening ? 'Transcribing..' : ''}</div>
+
+  <div class="fixed inset-x-0 bottom-3 px-4">
+    <button class="w-full py-4 rounded-full bg-green-600 text-white text-lg shadow-lg disabled:opacity-50" on:click={askGemini} disabled={!transcript.trim()}>
+      Generate Answer Hint
+    </button>
+  </div>
+</div>
+
+<!-- Desktop/tablet view -->
+<section class="hidden md:grid md:grid-cols-3 gap-6">
   <div class="bg-white dark:bg-gray-800 rounded-xl shadow p-4">
     <div class="flex items-center justify-between mb-3">
       <h2 class="font-semibold">Live Transcript</h2>
