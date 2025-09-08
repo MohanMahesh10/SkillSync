@@ -10,7 +10,7 @@ permissions:
   id-token: write
 
 env:
-  WORKDIR: ${{ hashFiles('job-interview-copilot/package.json') != '' && 'job-interview-copilot' || '.' }}
+  WORKDIR: .
 
 jobs:
   build:
@@ -18,6 +18,14 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Detect workdir
+        run: |
+          if [ -f job-interview-copilot/package.json ]; then
+            echo "WORKDIR=job-interview-copilot" >> $GITHUB_ENV
+          else
+            echo "WORKDIR=." >> $GITHUB_ENV
+          fi
 
       - name: Setup Node
         uses: actions/setup-node@v4
