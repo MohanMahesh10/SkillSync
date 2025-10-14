@@ -1,7 +1,7 @@
 // Minimal Gemini API helper using fetch with Bearer token
 
 import { isApiKeyString } from './util';
-import { GoogleGenerativeAI } from '@google/genai';
+import { GoogleGenerativeAI } from '@google/generative-ai';
 
 export async function validateApiKey(apiKey: string): Promise<boolean> {
   try {
@@ -31,7 +31,7 @@ export async function generateText({ apiKey, model = 'gemini-2.5-flash', prompt,
     contents: [{ role: 'user', parts: [{ text: prompt }] }],
     generationConfig: { temperature },
   });
-  const text = (res as any)?.text || (res as any)?.response?.text || '';
+  const text = (res as any)?.response?.text || (res as any)?.text || '';
   return { text, confidence: undefined };
 }
 

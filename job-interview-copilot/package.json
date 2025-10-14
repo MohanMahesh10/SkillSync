@@ -12,7 +12,7 @@
     "mammoth": "^1.7.2",
     "pdfjs-dist": "^4.6.82",
     "svelte": "^4.2.18",
-    "@google/genai": "^0.22.0"
+    "@google/generative-ai": "latest"
   },
   "devDependencies": {
     "@sveltejs/vite-plugin-svelte": "^3.1.2",
