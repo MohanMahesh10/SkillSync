@@ -25,13 +25,15 @@ type GenerateOptions = {
 };
 
 export async function generateText({ apiKey, model = 'gemini-2.5-flash', prompt, temperature = 0.7 }: GenerateOptions): Promise<{ text: string; confidence?: number }> {
-  const client = new GoogleGenerativeAI({ apiKey });
-  const res = await client.models.generateContent({
-    model,
+  const effectiveKey = apiKey || (import.meta as any)?.env?.VITE_GEMINI_API_KEY || '';
+  if (!effectiveKey) throw new Error('Gemini API key missing. Enter it on the entry screen or set VITE_GEMINI_API_KEY.');
+  const genAI = new GoogleGenerativeAI(effectiveKey);
+  const mdl = genAI.getGenerativeModel({ model });
+  const result = await mdl.generateContent({
     contents: [{ role: 'user', parts: [{ text: prompt }] }],
     generationConfig: { temperature },
   });
-  const text = (res as any)?.response?.text || (res as any)?.text || '';
+  const text = result?.response?.text() || '';
   return { text, confidence: undefined };
 }
 
