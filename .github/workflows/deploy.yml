@@ -35,13 +35,14 @@ jobs:
           cache-dependency-path: ${{ env.WORKDIR }}/package-lock.json
 
       - name: Install
-        run: npm ci
+        run: npm install --no-audit --no-fund
         working-directory: ${{ env.WORKDIR }}
 
       - name: Build
         env:
           GITHUB_REPOSITORY: ${{ github.repository }}
           VITE_BASE_PATH: /${{ github.event.repository.name }}/
+          VITE_GEMINI_API_KEY: ${{ secrets.VITE_GEMINI_API_KEY }}
         run: npm run build
         working-directory: ${{ env.WORKDIR }}
 
